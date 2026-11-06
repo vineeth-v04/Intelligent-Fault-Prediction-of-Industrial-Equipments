@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Fault Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Chart.js for all the gauges and charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ML.js for Machine Learning algorithms -->
+    <script src="https://www.lactame.com/lib/ml/6.0.0/ml.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Top Navigation / Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1>Fault Detection & Diagnostics</h1>
+                <span class="subtitle" id="aiEngineLabel">Industrial Equipment Monitoring | AI: Rule-Based</span>
+            </div>
+            <div class="header-right" style="display: flex; gap: 16px; align-items: center;">
+                <button class="btn-ai" id="generateAiReportBtn">✨ Generate AI Report</button>
+                <button class="btn-report" id="openInputModalBtn">Input Data</button>
+                <div class="status-badge">
+                    <span class="status-dot green"></span> System Online
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <div class="grid-layout">
+
+            <!-- Left Column: Gauges and Pies -->
+            <div class="left-column">
+
+                <!-- 1. Large Top Widget -->
+                <div class="card premium-card">
+                    <div class="main-widget-layout">
+                        <div class="widget-circle-container">
+                            <canvas id="workTimeChart"></canvas>
+                            <div class="circle-center-text">
+                                <span class="value">1245</span>
+                                <span class="label">Total Hrs</span>
+                            </div>
+                        </div>
+                        <div class="widget-bars">
+                            <h3>Work Time Distribution</h3>
+
+                            <div class="bar-item">
+                                <div class="bar-header">
+                                    <span class="bar-label">Operational</span>
+                                    <span class="bar-value">920 h</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill bg-green" style="width: 74%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-header">
+                                    <span class="bar-label">Idle</span>
+                                    <span class="bar-value">200 h</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill bg-blue" style="width: 16%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-header">
+                                    <span class="bar-label">Maintenance</span>
+                                    <span class="bar-value">85 h</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill bg-yellow" style="width: 7%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-header">
+                                    <span class="bar-label">Fault / Down</span>
+                                    <span class="bar-value">40 h</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill bg-red" style="width: 3%;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Four Small Gauges -->
+                <div class="card premium-card">
+                    <div class="four-gauges">
+                        <div class="gauge-item">
+                            <h4>Temperature (°C)</h4>
+                            <div class="gauge-canvas-wrapper">
+                                <canvas id="tempGauge"></canvas>
+                                <div class="gauge-value">
+                                    <span class="val">85</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gauge-item">
+                            <h4>Pressure (PSI)</h4>
+                            <div class="gauge-canvas-wrapper">
+                                <canvas id="pressureGauge"></canvas>
+                                <div class="gauge-value">
+                                    <span class="val">120</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gauge-item">
+                            <h4>Vibration (mm/s)</h4>
+                            <div class="gauge-canvas-wrapper">
+                                <canvas id="vibrationGauge"></canvas>
+                                <div class="gauge-value">
+                                    <span class="val">20</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gauge-item">
+                            <h4>Active Faults</h4>
+                            <div class="gauge-canvas-wrapper">
+                                <canvas id="faultsGauge"></canvas>
+                                <div class="gauge-value">
+                                    <span class="val">3</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Two Pie Charts -->
+                <div class="card premium-card">
+                    <div class="two-pies">
+                        <div class="pie-item">
+                            <h4>Fault Type</h4>
+                            <div class="pie-canvas-wrapper">
+                                <canvas id="faultTypePie"></canvas>
+                                <div class="pie-center-val">24<br><span>Total</span></div>
+                            </div>
+                        </div>
+                        <div class="pie-item">
+                            <h4>System</h4>
+                            <div class="pie-canvas-wrapper">
+                                <canvas id="systemPie"></canvas>
+                                <div class="pie-center-val">6<br><span>Units</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Detail Pie Chart -->
+                <div class="card premium-card" style="margin-top: 20px;">
+                    <div style="text-align: center;">
+                        <div class="pie-item" style="width: 100%;">
+                            <h4>Fault Detail Breakdown</h4>
+                            <div class="pie-canvas-wrapper" style="max-width: 220px; margin: 0 auto;">
+                                <canvas id="detailPie"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Line Charts -->
+            <div class="right-column">
+
+                <!-- Top Line Chart -->
+                <div class="card premium-card flex-2">
+                    <div class="chart-header">
+                        <h3>Parameter Comparisons (Last 7 Days)</h3>
+                        <div class="chart-legend-custom">
+                            <span>
+                                <div class="dot bg-red"></div> Temperature
+                            </span>
+                            <span>
+                                <div class="dot bg-blue"></div> Pressure
+                            </span>
+                            <span>
+                                <div class="dot bg-green"></div> Work Load
+                            </span>
+                            <span>
+                                <div class="dot" style="background-color: #f59e0b;"></div> Vibration
+                            </span>
+                        </div>
+                    </div>
+                    <div class="line-canvas-wrapper">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bottom Line Chart -->
+                <div class="card premium-card flex-1">
+                    <div class="chart-header">
+                        <h3>Critical Faults Timeline</h3>
+                    </div>
+                    <div class="line-canvas-wrapper">
+                        <canvas id="criticalChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- AI Insights Card -->
+                <div class="card premium-card ai-card">
+                    <div class="chart-header">
+                        <h3>✨ AI Predictive Insights</h3>
+                    </div>
+                    <div class="ai-content" id="liveAiInsights">
+                        <div class="ai-insight-item">
+                            <span class="ai-indicator good"></span>
+                            <p><strong>Optimization:</strong> System stable. Running at 98% optimal efficiency based on
+                                historical AI models.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Input Modal -->
+    <div id="dataInputModal" class="modal-overlay">
+        <div class="modal-content card premium-card">
+            <div class="modal-header">
+                <h2>Input Industrial Data</h2>
+                <button class="close-btn" id="closeInputModalBtn">&times;</button>
+            </div>
+            <form id="dataInputForm" class="modal-form">
+                <div class="form-group">
+                    <label for="inputType">Product / Machine Type</label>
+                    <select id="inputType" required>
+                        <option value="L" selected>L (Low Quality Variant)</option>
+                        <option value="M">M (Medium Quality Variant)</option>
+                        <option value="H">H (High Quality Variant)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="inputAirTemp">Air Temperature (K)</label>
+                    <input type="number" id="inputAirTemp" value="300.0" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputProcessTemp">Process Temperature (K)</label>
+                    <input type="number" id="inputProcessTemp" value="310.0" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputRotSpeed">Rotational Speed (RPM)</label>
+                    <input type="number" id="inputRotSpeed" value="1538" step="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputTorque">Torque (Nm)</label>
+                    <input type="number" id="inputTorque" value="40.0" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputToolWear">Tool Wear (min)</label>
+                    <input type="number" id="inputToolWear" value="108" step="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="mlModelSelector">Predictive Strategy</label>
+                    <select id="mlModelSelector" required>
+                        <option value="random-forest" selected>Random Forest Classifier (Trained ML)</option>
+                        <option value="logistic-regression">Logistic Regression (Trained ML)</option>
+                        <option value="rule-based">Rule-Based Fault Detection</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Analyze Data</button>
+                </div>
+            </form>
+            <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+            <form id="analyzeDatasetForm" class="modal-form">
+                <div class="form-group">
+                    <label for="analyzeCsvUpload" style="font-weight: 600; color:var(--color-blue);">📊 Analyze Machine Health (CSV)</label>
+                    <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:8px;">
+                        Upload a machine dataset to analyze its overall health and display results.
+                    </p>
+                    <input type="file" id="analyzeCsvUpload" accept=".csv" required style="padding: 8px;">
+                </div>
+                <div class="form-actions" style="margin-top: 12px;">
+                    <button type="submit" class="btn-submit" id="analyzeSubmitBtn" style="background:#3b82f6;">Analyze Dataset</button>
+                </div>
+            </form>
+            <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+            <form id="trainModelForm" class="modal-form">
+                <div class="form-group">
+                    <label for="csvDatasetUpload" style="font-weight: 600; color:var(--color-purple);">✨ Advanced:
+                        Upload Custom Training Dataset (.csv)</label>
+                    <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:8px;">Trains
+                        model on your real-world observations. (Required columns: Type, Air temp, Process temp, Speed, Torque, Tool wear, Target)
+                    </p>
+                    <input type="file" id="csvDatasetUpload" accept=".csv" required style="padding: 8px;">
+                </div>
+                <div class="form-actions" style="margin-top: 12px;">
+                    <button type="submit" class="btn-submit" id="trainSubmitBtn" style="background:#8b5cf6;">Re-Train AI
+                        Models</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Diagnostic Report Modal -->
+    <div id="aiReportModal" class="modal-overlay">
+        <div class="modal-content card premium-card" style="max-width: 680px; width: 92%; max-height: 88vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.4rem;">✨</span>
+                    <div>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">AI Diagnostic & Predictive Health Report</h2>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);" id="aiReportTimestamp">Generated Just Now</span>
+                    </div>
+                </div>
+                <button class="close-btn" id="closeAiReportBtn" title="Close Report">&times;</button>
+            </div>
+            
+            <div id="aiReportBody" style="overflow-y: auto; padding-right: 6px; flex: 1;">
+                <!-- Populated dynamically by JS -->
+            </div>
+
+            <div class="form-actions" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                <button type="button" class="btn-submit" id="ackAiReportBtn" style="width: auto; padding: 10px 24px; background: var(--text-primary); color: #fff;">Close Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Result Modal -->
+    <div id="analysisResultModal" class="modal-overlay">
+        <div class="modal-content card premium-card" style="max-width: 500px; text-align: center;">
+            <div class="modal-header">
+                <h2>Dataset Analysis Result</h2>
+                <button class="close-btn" id="closeResultModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px 0;">
+                <div class="pie-canvas-wrapper" style="max-width: 250px; margin: 0 auto; margin-bottom: 20px;">
+                    <canvas id="analysisResultPie"></canvas>
+                </div>
+                <div id="analysisResultText" style="text-align: left; background: var(--bg-hover); padding: 15px; border-radius: 8px; color: var(--text-color);">
+                    <!-- Text populated by JS -->
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top: 20px;">
+                <button class="btn-submit" id="ackResultBtn" style="background:#2bdc12;">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='indus.js') }}"></script>
+</body>
+
+</html>
